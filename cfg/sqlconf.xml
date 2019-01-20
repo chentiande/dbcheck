@@ -1,0 +1,632 @@
+<?xml version="1.0" encoding="GBK"?>
+
+ <conf>
+ <title>RAC数据库巡检报告</title>
+  <sqlcfg sqlname="数据库概况" dbname="hbscms">
+  <text>本部分信息可作为整体优化的参考</text>
+  <text>版本是否需要升级，内存配置是否合理，数据库空间配置及使用是否合理</text>
+  <sql>
+  <![CDATA[
+
+SELECT '数据库ID' "信息列表", to_char(dbid) "内容值"  from v$database union
+SELECT '数据库名称' "信息列表",name "内容值"  from v$database union
+SELECT '平台类型' "信息列表",platform_name "内容值"  from v$database union
+SELECT '数据库类型' "信息列表",decode(count(instance_number),1,'单机',2,'RAC','单机') "内容值"  from gv$instance union
+SELECT '数据库版本' "信息列表",banner "内容值"  from v$version where banner like '%Database%' union
+SELECT '实例名称' "信息列表",listagg(instance_name) within GROUP (order by instance_name)   "内容值"   
+ from gv$instance group by 1 union
+ SELECT  '数据库总容量（所有数据文件大小）' "信息列表",to_char(round(SUM(DECODE(autoextensible, 'YES', maxbytes, bytes)) / 1024 / 1024 / 1024,2))||'G'  "内容值" 
+FROM dba_data_files union
+ SELECT  '已使用（所有Segments总大小' "信息列表",to_char(round(SUM(bytes) / 1024 / 1024 / 1024,2))||'G'  "内容值" 
+FROM dba_segments  union
+select distinct 'SGA配置' "信息列表",  CASE
+       WHEN bytes > POWER(2,50) THEN ROUND(bytes/POWER(2,50),1)||' P'
+       WHEN bytes > POWER(2,40) THEN ROUND(bytes/POWER(2,40),1)||' T'
+       WHEN bytes > POWER(2,30) THEN ROUND(bytes/POWER(2,30),1)||' G'
+       WHEN bytes > POWER(2,20) THEN ROUND(bytes/POWER(2,20),1)||' M'
+       WHEN bytes > POWER(2,10) THEN ROUND(bytes/POWER(2,10),1)||' K'
+       ELSE bytes||' B' END "内容值" 
+FROM gv$sgainfo where name ='Maximum SGA Size' and inst_id=1 union
+SELECT  distinct '高速缓存大小' "信息列表",
+       CASE
+       WHEN bytes > POWER(2,50) THEN ROUND(bytes/POWER(2,50),1)||' P'
+       WHEN bytes > POWER(2,40) THEN ROUND(bytes/POWER(2,40),1)||' T'
+       WHEN bytes > POWER(2,30) THEN ROUND(bytes/POWER(2,30),1)||' G'
+       WHEN bytes > POWER(2,20) THEN ROUND(bytes/POWER(2,20),1)||' M'
+       WHEN bytes > POWER(2,10) THEN ROUND(bytes/POWER(2,10),1)||' K'
+       ELSE bytes||' B' END "内容值"
+  FROM gv$sgainfo where name ='Buffer Cache Size'  and inst_id=1 union
+SELECT  distinct '共享池大小' "信息列表",
+       CASE
+       WHEN bytes > POWER(2,50) THEN ROUND(bytes/POWER(2,50),1)||' P'
+       WHEN bytes > POWER(2,40) THEN ROUND(bytes/POWER(2,40),1)||' T'
+       WHEN bytes > POWER(2,30) THEN ROUND(bytes/POWER(2,30),1)||' G'
+       WHEN bytes > POWER(2,20) THEN ROUND(bytes/POWER(2,20),1)||' M'
+       WHEN bytes > POWER(2,10) THEN ROUND(bytes/POWER(2,10),1)||' K'
+       ELSE bytes||' B' END "内容值"
+  FROM gv$sgainfo where name ='Shared Pool Size' and inst_id=1 union
+    SELECT  distinct 'PGA配置' "信息列表",
+       CASE
+       WHEN value > POWER(2,50) THEN ROUND(value/POWER(2,50),1)||' P'
+       WHEN value > POWER(2,40) THEN ROUND(value/POWER(2,40),1)||' T'
+       WHEN value > POWER(2,30) THEN ROUND(value/POWER(2,30),1)||' G'
+       WHEN value > POWER(2,20) THEN ROUND(value/POWER(2,20),1)||' M'
+       WHEN value > POWER(2,10) THEN ROUND(value/POWER(2,10),1)||' K'
+       ELSE value||' B' END "内容值"
+  FROM gv$pgastat where name ='total PGA allocated' and inst_id=1 union 
+select '控制文件数量' "信息列表", to_char(count(name)) "内容值"   FROM gv$system_parameter2
+where name ='control_files' and inst_id=1 union
+SELECT '表空间数量' "信息列表", to_char(count(distinct tablespace_name)) "内容值" 
+  FROM dba_data_files  union
+ SELECT '数据文件数量' "信息列表", to_char(count(tablespace_name)) "内容值" 
+  FROM dba_data_files  union 
+   SELECT '临时文件数量' "信息列表", to_char(count(tablespace_name)) "内容值" 
+  FROM dba_temp_files union
+  SELECT '日志数量' "信息列表", to_char(count(BYTES)) "内容值" 
+  FROM v$log union
+    SELECT '日志大小' "信息列表", to_char(sum(BYTES/1024/1024))||'M' "内容值" 
+  FROM v$log union
+select  '是否开启归档' "信息列表",decode(log_mode,'ARCHIVELOG','开启','未开启') "内容值"  from v$database union
+    SELECT '存储模式' "信息列表", decode(substr(file_name,0,1),'+','ASM','文件系统') "内容值" 
+ FROM dba_data_files  where rownum=1
+]]>
+</sql>
+ 
+  </sqlcfg>
+<sqlcfg sqlname="数据库无效对象" dbname="hbscms">
+  <text>执行@$ORACLE_HOME/rdbms/admin/utlrp.sql脚本编译数据库失效对象  </text>
+  <text>对于无法编译的无效对象，确认不使用时可手动进行清理</text>
+  <sql>
+  <![CDATA[
+SELECT OWNER,OBJECT_NAME,OBJECT_TYPE,status,to_char(CREATED,'YYYY-MM-DD') CREATED
+  FROM dba_objects
+ WHERE status = 'INVALID'
+ ORDER BY 1,3,2
+]]>
+</sql>
+ 
+  </sqlcfg>
+  
+  <sqlcfg sqlname="数据库无效索引" dbname="hbscms">
+  <text>有效的索引可提高查询速度，降低数据库全表扫描导致的IO资源消耗严重的问题  </text>
+  <text>通过重建索引方式完成无效索引的修复</text>
+  <sql>
+  <![CDATA[
+SELECT OWNER,INDEX_NAME,INDEX_TYPE,TABLE_NAME
+        FROM dba_indexes
+ WHERE status = 'UNUSABLE'
+ union 
+ SELECT index_owner OWNER,index_name INDEX_NAME,'NORMAL' INDEX_TYPE,partition_name TABLE_NAME
+  from 
+ dba_ind_subpartitions where status='INVALID'
+  union 
+ SELECT index_owner OWNER,index_name INDEX_NAME,'NORMAL' INDEX_TYPE,partition_name TABLE_NAME
+        FROM
+  dba_ind_partitions where status='UNUSABLE'
+]]>
+</sql>
+
+ 
+  </sqlcfg>
+  
+    <sqlcfg sqlname="Redo log 文件" dbname="hbscms">
+  <text>redo日志的效率直接影响数据库提交效率  </text>
+  <text>redo文件过小，频繁的日志提交等都需要避免并根据业务情况优化</text>
+  <sql>
+  <![CDATA[
+SELECT GROUP# ,THREAD#,SEQUENCE# ,BYTES/1024/1024 "BYTES(M)",STATUS,to_char(FIRST_TIME,'YYYY-MM-DD HH24:MI:SS') FIRST_TIME
+  FROM v$log
+ ORDER BY 1, 2, 3, 4
+]]>
+</sql>
+
+  </sqlcfg>
+   <sqlcfg sqlname="数据库临时表空间" dbname="hbscms">
+  <text>临时表空间作为数据库重要的组成部分，用来产生中间过程中使用的临时表和排序  </text>
+  <text>如果没有足够的临时表空间，需要调整和增加</text>
+  <sql>
+  <![CDATA[
+select * from (select a.tablespace_name,
+sum(a.bytes/1024/1024) allocated_mb
+from dba_temp_files a
+ group by a.tablespace_name) x,
+(select sum(b.bytes_used/1024/1024) used_mb,
+sum(b.bytes_free/1024/1024) free_mb
+from v$temp_space_header b
+   group by b.tablespace_name)
+ 
+]]>
+</sql>
+
+  </sqlcfg>
+    <sqlcfg sqlname="数据库UNDO空间情况" dbname="hbscms">
+  <text>UNDO空间的大小和保留时间参数设置直接影响撤销空间的有效使用  </text>
+  <text>在保留时间和有限空间中需要一个平衡设置点将会降低UNDO空间使用方面的问题</text>
+  <sql>
+  <![CDATA[
+select d.undo_size/(1024*1024) "Current UNDO SIZE(M)",
+   SUBSTR(e.value,1,25) "UNDO RETENTION (秒)",
+   (to_number(e.value) * to_number(f.value) *
+   g.undo_block_per_sec) / (1024*1024) 
+  "Necessary UNDO SIZE (M)"
+ from (
+   select sum(a.bytes) undo_size
+     from v$datafile a,
+          v$tablespace b,
+         dba_tablespaces c
+   where c.contents = 'UNDO'
+     and c.status = 'ONLINE'
+     and b.name = c.tablespace_name
+     and a.ts# = b.ts#
+  ) d,
+ v$parameter e,
+  v$parameter f,
+  (
+  Select max(undoblks/((end_time-begin_time)*3600*24))
+    undo_block_per_sec
+    from v$undostat
+  ) g
+where e.name = 'undo_retention'
+and f.name = 'db_block_size'
+]]>
+</sql>
+ 
+  </sqlcfg>
+  
+    <sqlcfg sqlname="数据库空间使用情况" dbname="hbscms">
+  <text>数据文件是数据库分配的物理文件。在Oracle数据库中，一个表空间可以包含一个或多个物理文件。  </text>
+  <text>对空间使用情况及时监控，保证数据库增长过程中有足够的扩充空间</text>
+  <sql>
+  <![CDATA[
+WITH
+files AS (
+SELECT /*+ MATERIALIZE NO_MERGE */
+       tablespace_name,
+       SUM(DECODE(autoextensible, 'YES', maxbytes, bytes)) / 1024 / 1024 / 1024 total_gb
+  FROM dba_data_files
+ GROUP BY
+       tablespace_name
+),
+segments AS (
+SELECT /*+ MATERIALIZE NO_MERGE */
+       tablespace_name,
+       SUM(bytes) / 1024 / 1024 / 1024 used_gb
+  FROM dba_segments
+ GROUP BY
+       tablespace_name
+),
+tablespaces AS (
+SELECT /*+ MATERIALIZE NO_MERGE */
+       files.tablespace_name,
+       ROUND(files.total_gb, 1) total_gb,
+       ROUND(segments.used_gb, 1) used_gb,
+       ROUND(100 * segments.used_gb / files.total_gb, 1) pct_used
+  FROM files,
+       segments
+ WHERE files.total_gb > 0
+   AND files.tablespace_name = segments.tablespace_name(+)
+ ORDER BY
+       files.tablespace_name
+),
+total AS (
+SELECT /*+ MATERIALIZE NO_MERGE */
+       'Total' tablespace_name,
+       SUM(total_gb) total_gb,
+       SUM(used_gb) used_gb,
+       ROUND(100 * SUM(used_gb) / SUM(total_gb), 1) pct_used
+  FROM tablespaces
+)
+SELECT tablespace_name,
+       total_gb,
+       used_gb,
+       pct_used
+  FROM tablespaces
+ UNION ALL
+SELECT tablespace_name,
+       total_gb,
+       used_gb,
+       pct_used
+  FROM total
+]]>
+</sql>
+<colum num="4" min="#" max="85">3</colum>
+<colum num="4" min="#" max="90">2</colum>
+<colum num="4" min="#" max="95">1</colum>
+ 
+  </sqlcfg>
+  
+  <sqlcfg sqlname="资源使用情况" dbname="hbscms">
+  <text>数据库资源配置是否满足数据库运行的要求，需要查看当前数据库资源使用状况  </text>>
+  <text>如存在运行峰值超越或接近配置最大值，需要关注相关资源设置并调整优化</text>>
+  <sql>
+  <![CDATA[
+SELECT /*+ NO_MERGE */
+       *
+  FROM gv$resource_limit
+ ORDER BY
+       resource_name,
+       inst_id
+]]>
+</sql>
+ 
+  </sqlcfg>
+  
+    <sqlcfg sqlname="RDBMS初始化参数" dbname="hbscms">
+  <text>ORACLE数据库的初始化参数可以启停很多特殊功能，但任何功能都以消耗资源为代价  </text>>
+  <text>需要关注不使用的默认开启功能，确认后关闭提高资源有效使用</text>>
+  <sql>
+  <![CDATA[
+SELECT  name ,value
+  FROM gv$system_parameter2  where  name in ('recyclebin','audit_trail') and inst_id=1
+]]>
+</sql>
+
+ 
+  </sqlcfg>
+  
+    <sqlcfg sqlname="数据库备份情况" dbname="hbscms">
+  <text>数据库备份时数据库故障后进行恢复的必要手段，开启归档，使用rman全库备份尤为重要 </text>
+  <text>开启归档，备份控制文件，备份数据文件和归档日志，如有定时任务，需要及时监控备份任务执行情况</text>
+  <sql>
+  <![CDATA[
+SELECT START_TIME,END_TIME,OUTPUT_DEVICE_TYPE,STATUS,INPUT_TYPE
+  FROM v$rman_backup_job_details
+WHERE start_time >= (SYSDATE - 10)
+order by 1 desc
+]]>
+</sql>
+
+<colum num="5" min="%" max="ARCHIVELOG">1</colum>
+ 
+  </sqlcfg>
+  
+    <sqlcfg sqlname="ASM DISK检查" dbname="hbscms">
+  <text>ASM管理是ORACLE数据库RAC的表空间文件管理方式之一</text>
+  <text>对ASM涉及的磁盘组和磁盘文件进行监控可有效降低数据库故障</text>
+  <sql>
+  <![CDATA[
+SELECT group_number,name,state,type,total_MB,free_MB,VOTING_FILES
+      
+  FROM v$asm_diskgroup_stat
+ ORDER BY
+1, 2
+]]>
+</sql>
+ 
+  </sqlcfg>
+  
+    <sqlcfg sqlname="大对象检查" dbname="hbscms">
+  <text>数据库大对象指占用空间较大的数据库对象，包括回滚段，数据段和索引段  </text>
+  <text>通过分片及时清理历史数据，提高数据库运行效率和存储效率</text>
+  <sql>
+  <![CDATA[
+WITH schema_object AS (
+SELECT /*+ MATERIALIZE NO_MERGE */
+       segment_type,
+       owner,
+       segment_name,
+       tablespace_name,
+       COUNT(*) segments,
+       SUM(extents) extents,
+       SUM(blocks) blocks,
+       SUM(bytes) bytes
+  FROM dba_segments
+ GROUP BY
+       segment_type,
+       owner,
+       segment_name,
+       tablespace_name
+), totals AS (
+SELECT /*+ MATERIALIZE NO_MERGE */
+       SUM(segments) segments,
+       SUM(extents) extents,
+       SUM(blocks) blocks,
+       SUM(bytes) bytes
+  FROM schema_object
+)
+
+SELECT /*+ MATERIALIZE NO_MERGE */
+      * FROM (
+SELECT so.segment_type,
+       so.owner,
+       so.segment_name,
+       so.tablespace_name,
+       so.extents,
+      ROUND(so.bytes / 1024 / 1024 / 1024, 3) gb,
+       ROUND((so.bytes / t.bytes) * 100, 3) bytes_perc
+  FROM schema_object so,
+       totals t
+ ORDER BY
+       bytes_perc DESC NULLS LAST
+) v1
+ WHERE ROWNUM < 21
+ 
+]]>
+
+</sql>
+<colum num="6" min="#" max="1">4</colum>
+ 
+  </sqlcfg>
+  
+   <sqlcfg sqlname="数据库运行曲线" dbname="hbscms">
+  <text>DB time为所有前台session花费在database调用上的总和时间</text>
+  <text>可通过数据生成曲线图，找到运行毛刺，及时发现数据库运行瓶颈</text>
+  <sql>
+  <![CDATA[
+
+with sysstat as (
+select sn.begin_interval_time begin_interval_time,
+sn.end_interval_time end_interval_time,
+ss.stat_name stat_name,
+ss.value e_value,
+lag(ss.value, 1) over(order by ss.snap_id) b_value
+from dba_hist_sysstat ss, dba_hist_snapshot sn
+where trunc(sn.begin_interval_time) >= sysdate - 2
+and ss.snap_id = sn.snap_id
+and ss.dbid = sn.dbid
+and ss.instance_number = sn.instance_number
+and ss.dbid = (select dbid from v$database)
+and ss.instance_number = (select instance_number from v$instance)
+and ss.stat_name = 'DB time'
+)
+select to_char (BEGIN_INTERVAL_TIME, 'mm-dd hh24:mi') || to_char (END_INTERVAL_TIME, '
+hh24:mi') date_time, stat_name, round((e_value - nvl(b_value, 0)) / (extract(day
+from(end_interval_time - begin_interval_time)) * 24 * 60 * 60 + extract(hour
+from(end_interval_time - begin_interval_time)) * 60 * 60 + extract(minute
+from(end_interval_time - begin_interval_time)) * 60 + extract(second
+from(end_interval_time - begin_interval_time))), 0) per_sec
+from sysstat
+where(e_value - nvl(b_value, 0)) > 0 and nvl(b_value, 0) > 0
+
+
+]]>
+</sql>
+ 
+  </sqlcfg>
+    <sqlcfg sqlname="TOP 10等待事件" dbname="hbscms">
+  <text>等待事件泛指所有数据库运行过程中由于资源排队，争用过程中所消耗的事件  </text>
+  <text>通过等待事件发现数据库瓶颈，及时优化，提高数据库运行效率</text>
+  <sql>
+  <![CDATA[
+select t2.event,
+       round(100 * t2.time_waited / (t1.w1 + t3.cpu), 2) event_wait_percent
+  from (SELECT SUM(time_waited) w1
+          FROM v$system_event
+         WHERE event NOT IN
+               ('smon timer',
+                'pmon timer',
+                'rdbms ipc message',
+                'Null event',
+                'parallel query dequeue',
+                'pipe get',
+                'client message',
+                'SQL*Net message to client',
+                'SQL*Net message from client',
+                'SQL*Net more data from client',
+                'dispatcher timer',
+                'virtual circuit status',
+                'lock manager wait for remote message',
+                'PX Idle Wait',
+                'PX Deq: Execution Msg',
+                'PX Deq: Table Q Normal',
+                'wakeup time manager',
+                'slave wait',
+                'i/o slave wait',
+                'jobq slave wait',
+                'null event',
+                'gcs remote message',
+                'gcs for action',
+                'ges remote message',
+                'queue messages',
+                'wait for unread message on broadcast channel',
+                'PX Deq Credit: send blkd',
+                'PX Deq: Execute Reply',
+                'PX Deq: Signal ACK',
+                'PX Deque wait',
+                'PX Deq Credit: need buffer',
+                'STREAMS apply coord waiting for slave message',
+                'STREAMS apply slave waiting for coord message',
+                'Queue Monitor Wait',
+                'Queue Monitor Slave Wait',
+                'wakeup event for builder',
+                'wakeup event for preparer',
+                'wakeup event for reader',
+                'wait for activate message',
+                'PX Deq: Par Recov Execute',
+                'PX Deq: Table Q Sample',
+                'STREAMS apply slave idle wait',
+                'STREAcapture process filter callback wait for ruleset',
+                'STREAMS fetch slave waiting for txns',
+                'STREAMS waiting for subscribers to catch up',
+                'Queue Monitor Shutdown Wait',
+                'AQ Proxy Cleanup Wait',
+                'knlqdeq',
+                'class slave wait',
+                'master wait',
+                'DIAG idle wait',
+                'ASM background timer',
+                'KSV master wait',
+                'EMON idle wait',
+                'Streams AQ:RACqmn coordinator idle wait',
+                'Streams AQ: qmn coordinator idle wait',
+                'Streams AQ: qmn slave idle wait',
+                'Streams AQ: waiting for time management or cleanup tasks',
+                'Streams AQ: waiting for messages in the queue',
+                'Streams fetch slave: waiting for txns',
+                'Streams AQ:deallocate messages from Streams Pool',
+                'Streams AQ: delete acknowledged messages',
+                'LNS ASYNC archive log',
+                'LNS ASYNC dest activation',
+                'LNS ASYNC end of log',
+                'LogMiner: client waiting for transaction',
+                'LogMiner: slave waiting for activate message',
+                'LogMiner: wakeup event for builder',
+                'LogMiner: wakeup event for preparer',
+                'LogMiner: wakeup event for reader')) t1,
+       (select *
+          from (select t.event,
+                       t.total_waits,
+                       t.total_timeouts,
+                       t.time_waited,
+                       t.average_wait,
+                       rownum num
+                  from (select event,
+                               total_waits,
+                               total_timeouts,
+                               time_waited,
+                               average_wait
+                          from v$system_event
+                         where event not in
+                               ('smon timer',
+                                'pmon timer',
+                                'rdbms ipc message',
+                                'Null event',
+                                'parallel query dequeue',
+                                'pipe get',
+                                'client message',
+                                'SQL*Net message to client',
+                                'SQL*Net message from client',
+                                'SQL*Net more data from client',
+                                'dispatcher timer',
+                                'virtual circuit status',
+                                'lock manager wait for remote message',
+                                'PX Idle Wait',
+                                'PX Deq: Execution Msg',
+                                'PX Deq: Table Q Normal',
+                                'wakeup time manager',
+                                'slave wait',
+                                'i/o slave wait',
+                                'jobq slave wait',
+                                'null event',
+                                'gcs remote message',
+                                'gcs for action',
+                                'ges remote message',
+                                'queue messages',
+                                'wait for unread message on broadcast channel',
+                                'PX Deq Credit: send blkd',
+                                'PX Deq: Execute Reply',
+                                'PX Deq: Signal ACK',
+                                'PX Deque wait',
+                                'PX Deq Credit: need buffer',
+                                'STREAMS apply coord waiting for slave message',
+                                'STREAMS apply slave waiting for coord message',
+                                'Queue Monitor Wait',
+                                'Queue Monitor Slave Wait',
+                                'wakeup event for builder',
+                                'wakeup event for preparer',
+                                'wakeup event for reader',
+                                'wait for activate message',
+                                'PX Deq: Par Recov Execute',
+                                'PX Deq: Table Q Sample',
+                                'STREAMS apply slave idle wait',
+                                'STREAcapture process filter callback wait for ruleset',
+                                'STREAMS fetch slave waiting for txns',
+                                'STREAMS waiting for subscribers to catch up',
+                                'Queue Monitor Shutdown Wait',
+                                'AQ Proxy Cleanup Wait',
+                                'knlqdeq',
+                                'class slave wait',
+                                'master wait',
+                                'DIAG idle wait',
+                                'ASM background timer',
+                                'KSV master wait',
+                                'EMON idle wait',
+                                'Streams AQ: RAC qmn coordinator idle wait',
+                                'Streams AQ: qmn coordinator idle wait',
+                                'Streams AQ: qmn slave idle wait',
+                                'Streams AQ: waiting for time management or cleanup tasks',
+                                'Streams AQ: waiting for messages in the queue',
+                                'Streams fetch slave: waiting for txns',
+                                'Streams AQ:deallocate messages from Streams Pool',
+                                'Streams AQ: delete acknowledged messages',
+                                'LNS ASYNC archive log',
+                                'LNS ASYNC dest activation',
+                                'LNS ASYNC end of log',
+                                'LogMiner: client waiting for transaction',
+                                'LogMiner: slave waiting for activate message',
+                                'LogMiner: wakeup event for builder',
+                                'LogMiner: wakeup event for preparer',
+                                'LogMiner: wakeup event for reader')
+                         order by time_waited desc) t)
+         where num < 11) t2,
+       (SELECT VALUE CPU
+          FROM v$sysstat
+         WHERE NAME LIKE 'CPU used by this session') t3
+
+]]>
+</sql>
+
+ 
+  </sqlcfg>
+  
+    <sqlcfg sqlname="可回收空间最多的Segments" dbname="hbscms">
+  <text>由于delete和update操作产生可回收的空间  </text>
+  <text>通过SHRINK、MOVE、Online Redefinition、REBUILD等操作回收空间，整理碎片</text>
+  <sql>
+  <![CDATA[
+SELECT segment_name,segment_type,allocated_space,used_space,reclaimable_space
+FROM TABLE(dbms_space.asa_recommendations())
+]]>
+</sql>
+<colum num="7" min="#" max="100000000">2</colum>
+ 
+  </sqlcfg>
+  
+    <sqlcfg sqlname="Gets per Exec高的SQL" dbname="hbscms">
+  <text>cpu消耗较多的sql，可通过优化降低CPU使用率 </text>
+  <text>获取sql的执行计划：select * from table(dbms_xplan.display_cursor('sql_id', 0, 'advanced'))</text>
+   <text>确认相关表是否有最新的统计信息,索引使用合理后对SQL逻辑进行优化</text>
+ 
+  <sql>
+  <![CDATA[
+select hash_value,sql_text,executions "执行次数",round(cpu_time/10000000,0) "CPU 消耗时间（秒）",disk_reads "物理读次数", round(ELAPSED_TIME/10000000,0) "执行时间（秒）"
+from (select hash_value,sql_text,executions,cpu_time,disk_reads,ELAPSED_TIME,
+    rank() over
+     (order by cpu_time desc) exec_rank
+    from v$SQL )
+where exec_rank <=20
+
+]]>
+</sql>
+ 
+  </sqlcfg>
+  
+      <sqlcfg sqlname="执行时间长的SQL" dbname="hbscms">
+  <text>执行时间长的sql，可通过优化提高SQL执行速度 </text>
+  <text>获取sql的执行计划：select * from table(dbms_xplan.display_cursor('sql_id', 0, 'advanced'))</text>
+   <text>确认相关表是否有最新的统计信息,索引使用合理后对SQL逻辑进行优化</text>
+ 
+  <sql>
+  <![CDATA[
+select hash_value,sql_text,executions "执行次数",round(cpu_time/10000000,0) "CPU 消耗时间（秒）",disk_reads "物理读次数", round(ELAPSED_TIME/10000000,0) "执行时间（秒）"
+from (select hash_value,sql_text,executions,cpu_time,disk_reads,ELAPSED_TIME,
+    rank() over
+     (order by ELAPSED_TIME desc) exec_rank
+    from v$SQL )
+where exec_rank <=20
+
+]]>
+</sql>
+ 
+  </sqlcfg>
+  
+        <sqlcfg sqlname="IO消耗严重SQL" dbname="hbscms">
+  <text>IO消耗严重SQL，可通过优化降低磁盘物理读，降低磁盘IO </text>
+  <text>获取sql的执行计划：select * from table(dbms_xplan.display_cursor('sql_id', 0, 'advanced'))</text>
+   <text>确认相关表是否有最新的统计信息,索引使用合理后对SQL逻辑进行优化</text>
+ 
+  <sql>
+  <![CDATA[
+select hash_value,sql_text,executions "执行次数",round(cpu_time/10000000,0) "CPU 消耗时间（秒）",disk_reads "物理读次数", round(ELAPSED_TIME/10000000,0) "执行时间（秒）"
+from (select hash_value,sql_text,executions,cpu_time,disk_reads,ELAPSED_TIME,
+    rank() over
+     (order by disk_reads desc) exec_rank
+    from v$SQL )
+where exec_rank <=20
+
+]]>
+</sql>
+ 
+  
+  </sqlcfg>
+ </conf>

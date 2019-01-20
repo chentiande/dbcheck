@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="applicationClientModule"/>
+	<classpathentry kind="src" path="cfg"/>
+	<classpathentry kind="src" path="data"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/db2jcc4.jar"/>
+	<classpathentry kind="lib" path="lib/ifxjdbc.jar"/>
+	<classpathentry kind="lib" path="lib/ifxjdbcx.jar"/>
+	<classpathentry kind="lib" path="lib/ifxlang.jar"/>
+	<classpathentry kind="lib" path="lib/ifxlsupp.jar"/>
+	<classpathentry kind="lib" path="lib/ifxsqlj.jar"/>
+	<classpathentry kind="lib" path="lib/ifxtools.jar"/>
+	<classpathentry kind="lib" path="lib/jaxb-api-osgi.jar"/>
+	<classpathentry kind="lib" path="lib/jsr311-api.jar"/>
+	<classpathentry kind="lib" path="lib/jxl.jar"/>
+	<classpathentry kind="lib" path="lib/mail.jar"/>
+	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.35-bin.jar"/>
+	<classpathentry kind="lib" path="lib/ojdbc6.jar"/>
+	<classpathentry kind="lib" path="lib/postgresql-9.4.1211.jar"/>
+	<classpathentry kind="lib" path="lib/postgresql-9.4.1211.jre6.jar"/>
+	<classpathentry kind="lib" path="lib/postgresql-9.4.1211.jre7.jar"/>
+	<classpathentry kind="lib" path="lib/sqljdbc.jar"/>
+	<classpathentry kind="lib" path="lib/sqljdbc4.jar"/>
+	<classpathentry kind="lib" path="lib/sqljdbc41.jar"/>
+	<classpathentry kind="lib" path="lib/sqljdbc42.jar"/>
+	<classpathentry kind="lib" path="lib/weld-osgi-bundle.jar"/>
+	<classpathentry kind="lib" path="lib/bean-validator.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
