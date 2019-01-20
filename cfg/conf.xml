@@ -1,144 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
  <!-- oracle  dbtype=1 informix dbtype=0 mysql dbtype=2  sqlserver dbtype=3 postgresql dbtype=4  db2 dbtype=5-->
  <conf> 
- 
-  <dbcfg dbname="mysql" dbtype = "2">
- <dbip>10.125.255.95</dbip>
- <dbport>3306</dbport>
- <dbserver>gsmdb</dbserver>
- <dbname>gsmdb</dbname>
- <dbuser>dc_mysql</dbuser>
- <dbpasswd>dc_mysql</dbpasswd>
- </dbcfg>
- 
-  <dbcfg dbname="hbscms" dbtype = "1">
- <dbip>10.129.253.3</dbip>
- <dbport>11551</dbport>
- <dbserver>hbprd</dbserver>
- <dbname>hbprd</dbname>
- <dbuser>apps</dbuser>
- <dbpasswd>Asys_1613</dbpasswd>
- </dbcfg>
 
  
-<dbcfg dbname="HBNPRD" dbtype = "1">
- <dbip>10.129.253.4</dbip>
- <dbport>11601</dbport>
- <dbserver>HBNPRD</dbserver>
- <dbname>HBNPRD</dbname>
- <dbuser>apps</dbuser>
- <dbpasswd>apps_1021</dbpasswd>
- </dbcfg>
  
-<dbcfg dbname="hbscms1" dbtype = "1">
- <dbip>10.129.252.171</dbip>
+  <dbcfg dbname="hbscms" dbtype = "1">
+ <dbip>111.111.111.111</dbip>
  <dbport>1521</dbport>
- <dbserver>eamdb1</dbserver>
- <dbname>eamdb1</dbname>
- <dbuser>eamprd</dbuser>
- <dbpasswd>eamprd</dbpasswd>
+ <dbserver>inasdb1123</dbserver>
+ <dbname>inasdb11234</dbname>
+ <dbuser>inas</dbuser>
+ <dbpasswd>Inas123455</dbpasswd>
  </dbcfg>
- 
- 
-  <dbcfg dbname="hbscms3" dbtype = "1">
- <dbip>10.129.252.204</dbip>
- <dbport>1521</dbport>
- <dbserver>jkdb1</dbserver>
- <dbname>jkdb1</dbname>
- <dbuser>system</dbuser>
- <dbpasswd>jk0612db</dbpasswd>
- </dbcfg>
- 
-   <dbcfg dbname="hbscms1" dbtype = "1">
- <dbip>10.129.253.125</dbip>
- <dbport>1521</dbport>
- <dbserver>scms</dbserver>
- <dbname>scms</dbname>
- <dbuser>hbscms</dbuser>
- <dbpasswd>hb_scms122</dbpasswd>
- </dbcfg>
- 
-   <dbcfg dbname="hbscms4" dbtype = "1">
- <dbip>10.129.253.122</dbip>
- <dbport>1521</dbport>
- <dbserver>helims</dbserver>
- <dbname>helims</dbname>
- <dbuser>helims</dbuser>
- <dbpasswd>qthelims</dbpasswd>
- </dbcfg>
- 
-<dbcfg dbname="ORCL" dbtype = "1">
- <dbip>10.129.253.133</dbip>
- <dbport>1521</dbport>
- <dbserver>ORCL</dbserver>
- <dbname>ORCL</dbname>
- <dbuser>wbs_hb2</dbuser>
- <dbpasswd>wbs_hb2</dbpasswd>
- </dbcfg>
-  <dbcfg dbname="HBYDJH" dbtype = "5">
- <dbip>10.129.252.132</dbip>
- <dbport>60000</dbport>
- <dbserver>HBYDJH</dbserver>
- <dbname>HBYDJH</dbname>
- <dbuser>db2inst1</dbuser>
- <dbpasswd>YSjh@701</dbpasswd>
- </dbcfg>
- 
- <dbcfg dbname="TBMHB" dbtype = "5">
- <dbip>10.129.252.160</dbip>
- <dbport>50000</dbport>
- <dbserver>TBMHB</dbserver>
- <dbname>TBMHB</dbname>
- <dbuser>db2inst1</dbuser>
- <dbpasswd>db2inst1123</dbpasswd>
- </dbcfg>
- 
-  <dbcfg dbname="HBYD" dbtype = "5">
- <dbip>10.129.252.143</dbip>
- <dbport>50000</dbport>
- <dbserver>HBYD</dbserver>
- <dbname>HBYD</dbname>
- <dbuser>db2instl</dbuser>
- <dbpasswd>YQdb0701</dbpasswd>
- </dbcfg> 
-<dbcfg dbname="TDYDGF" dbtype = "5">
- <dbip>10.129.252.143</dbip>
- <dbport>50000</dbport>
- <dbserver>TDYDGF</dbserver>
- <dbname>TDYDGF</dbname>
- <dbuser>db2instl</dbuser>
- <dbpasswd>YQdb0701</dbpasswd>
- </dbcfg>
-<dbcfg dbname="EMSPRD" dbtype = "5">
- <dbip>10.129.252.140</dbip>
- <dbport>60008</dbport>
- <dbserver>EMSPRD</dbserver>
- <dbname>EMSPRD</dbname>
- <dbuser>emsinst</dbuser>
- <dbpasswd>emsinst123</dbpasswd>
- </dbcfg>
-    <dbcfg dbname="EFINANCE" dbtype = "5">
- <dbip>10.129.252.140</dbip>
- <dbport>60000</dbport>
- <dbserver>EFINANCE</dbserver>
- <dbname>EFINANCE</dbname>
- <dbuser>appinst</dbuser>
- <dbpasswd>pwd12345</dbpasswd>
- </dbcfg>
-    <dbcfg dbname="EFTD" dbtype = "5">
- <dbip>10.129.252.140</dbip>
- <dbport>60004</dbport>
- <dbserver>EFTD</dbserver>
- <dbname>EFTD</dbname>
- <dbuser>appinst1</dbuser>
- <dbpasswd>appinst1123</dbpasswd>
- </dbcfg>
-<dbcfg dbname="EVM" dbtype = "5">
- <dbip>10.129.252.140</dbip>
- <dbport>60005</dbport>
- <dbserver>EVM</dbserver>
- <dbname>EVM</dbname>
- <dbuser>evmuser</dbuser>
- <dbpasswd>evmuser123</dbpasswd>
- </dbcfg> 
+
+  
  </conf>
